@@ -1,3 +1,58 @@
 {
-  "placeholderImages": []
+  "placeholderImages": [
+    {
+      "id": "marketplace-compost-kit",
+      "description": "A home composting kit.",
+      "imageUrl": "https://picsum.photos/seed/101/400/300",
+      "imageHint": "compost kit"
+    },
+    {
+      "id": "marketplace-dustbins",
+      "description": "Set of color-coded dustbins for waste segregation.",
+      "imageUrl": "https://picsum.photos/seed/102/400/300",
+      "imageHint": "recycling bins"
+    },
+    {
+      "id": "marketplace-gardening-tools",
+      "description": "Eco-friendly gardening tools.",
+      "imageUrl": "https://picsum.photos/seed/103/400/300",
+      "imageHint": "gardening tools"
+    },
+    {
+      "id": "map-placeholder",
+      "description": "A placeholder image of a city map.",
+      "imageUrl": "https://picsum.photos/seed/104/1200/800",
+      "imageHint": "city map"
+    },
+    {
+      "id": "training-hero",
+      "description": "People learning about waste management.",
+      "imageUrl": "https://picsum.photos/seed/105/1200/400",
+      "imageHint": "community learning"
+    },
+    {
+      "id": "community-event",
+      "description": "Volunteers cleaning up a park.",
+      "imageUrl": "https://picsum.photos/seed/106/400/250",
+      "imageHint": "community cleanup"
+    },
+    {
+      "id": "report-issue-hero",
+      "description": "A smartphone camera pointed at a pile of trash.",
+      "imageUrl": "https://picsum.photos/seed/107/400/250",
+      "imageHint": "phone camera"
+    },
+    {
+      "id": "dashboard-card-1",
+      "description": "A person scheduling a pickup on their phone.",
+      "imageUrl": "https://picsum.photos/seed/108/600/400",
+      "imageHint": "phone schedule"
+    },
+    {
+      "id": "dashboard-card-2",
+      "description": "A map with pins showing facility locations.",
+      "imageUrl": "https://picsum.photos/seed/109/600/400",
+      "imageHint": "map locations"
+    }
+  ]
 }
