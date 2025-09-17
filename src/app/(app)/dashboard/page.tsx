@@ -18,6 +18,7 @@ import {
   Megaphone,
 } from 'lucide-react';
 import Link from 'next/link';
+import { WasteChart } from './waste-chart';
 
 const solutions = [
   {
@@ -90,24 +91,11 @@ export default function DashboardPage() {
             <CardHeader>
               <CardTitle>Waste Management Stats</CardTitle>
               <CardDescription>
-                India generates 1.7 lakh tonnes of municipal solid waste daily. Only 54% is scientifically treated.
+                India generates 1.7 lakh tonnes of municipal solid waste daily. Here's the breakdown of what happens to it.
               </CardDescription>
             </CardHeader>
             <CardContent>
-                 <div className="space-y-4">
-                    <div className="flex justify-between">
-                        <span>Waste Treated</span>
-                        <span className='font-bold'>54%</span>
-                    </div>
-                     <div className="flex justify-between">
-                        <span>Landfilled</span>
-                        <span className='font-bold'>24%</span>
-                    </div>
-                     <div className="flex justify-between">
-                        <span>Unaccounted</span>
-                        <span className='font-bold'>22%</span>
-                    </div>
-                 </div>
+                <WasteChart />
             </CardContent>
            </Card>
         </div>
