@@ -53,6 +53,18 @@
       "description": "A map with pins showing facility locations.",
       "imageUrl": "https://picsum.photos/seed/109/600/400",
       "imageHint": "map locations"
+    },
+    {
+      "id": "landing-hero",
+      "description": "A beautiful, clean city park with a skyline in the background.",
+      "imageUrl": "https://picsum.photos/seed/110/1920/1080",
+      "imageHint": "clean city"
+    },
+    {
+      "id": "scan-waste-feature",
+      "description": "A smartphone scanning a plastic bottle.",
+      "imageUrl": "https://picsum.photos/seed/111/400/250",
+      "imageHint": "scan waste"
     }
   ]
 }

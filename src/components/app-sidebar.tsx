@@ -22,16 +22,24 @@ import {
   Users,
   LogOut,
   Settings,
+  User,
+  Camera,
 } from 'lucide-react';
 import { Logo } from '@/components/icons';
 import { usePathname } from 'next/navigation';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
+import Link from 'next/link';
 
 const links = [
   {
     href: '/dashboard',
     label: 'Dashboard',
     icon: LayoutGrid,
+  },
+  {
+    href: '/scan-waste',
+    label: 'Scan Waste',
+    icon: Camera,
   },
   {
     href: '/schedule-pickup',
@@ -107,6 +115,14 @@ export function AppSidebar() {
       <SidebarFooter className="p-2">
         <SidebarSeparator />
         <SidebarMenu>
+           <SidebarMenuItem>
+            <SidebarMenuButton href="/profile" asChild tooltip={{children: "Profile"}}>
+              <Link href="/profile">
+                <User />
+                <span>Profile</span>
+              </Link>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
           <SidebarMenuItem>
             <SidebarMenuButton tooltip={{ children: 'Settings' }}>
               <Settings />
@@ -114,9 +130,11 @@ export function AppSidebar() {
             </SidebarMenuButton>
           </SidebarMenuItem>
           <SidebarMenuItem>
-            <SidebarMenuButton tooltip={{ children: 'Logout' }}>
-              <LogOut />
-              <span>Logout</span>
+            <SidebarMenuButton asChild tooltip={{ children: 'Logout' }}>
+              <Link href="/">
+                <LogOut />
+                <span>Logout</span>
+              </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>

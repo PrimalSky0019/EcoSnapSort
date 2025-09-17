@@ -3,3 +3,4 @@ config();
 
 import '@/ai/flows/notify-supervisors-of-unusual-schedule.ts';
 import '@/ai/flows/schedule-garbage-pickup.ts';
+import '@/ai/flows/identify-waste.ts';
