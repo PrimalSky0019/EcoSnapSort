@@ -8,6 +8,11 @@ import { Camera, CheckCircle, HelpCircle, Info, Loader2, RefreshCw, Send, Trash2
 import React, { useRef, useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { identifyWaste, type IdentifyWasteOutput } from '@/ai/flows/identify-waste';
+import { db, storage } from '@/lib/firebase';
+import { getDownloadURL, ref, uploadString } from 'firebase/storage';
+import { addDoc, collection } from 'firebase/firestore';
+import { v4 as uuidv4 } from 'uuid';
+
 
 export default function ScanWastePage() {
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -79,14 +84,33 @@ export default function ScanWastePage() {
     setLoading(true);
     setResult(null);
     try {
-      const response = await identifyWaste({ photoDataUri: capturedImage });
-      setResult(response);
+      const analysisResult = await identifyWaste({ photoDataUri: capturedImage });
+      setResult(analysisResult);
+
+      // Store image in Firebase Storage
+      const imageId = uuidv4();
+      const storageRef = ref(storage, `waste-images/${imageId}.jpg`);
+      const uploadTask = await uploadString(storageRef, capturedImage, 'data_url');
+      const downloadURL = await getDownloadURL(uploadTask.ref);
+
+      // Store analysis in Firestore
+      await addDoc(collection(db, "waste-analysis"), {
+        ...analysisResult,
+        imageUrl: downloadURL,
+        createdAt: new Date(),
+      });
+
+      toast({
+        title: 'Analysis Complete',
+        description: 'Image and analysis have been saved.',
+      });
+
     } catch (error) {
-      console.error('Error identifying waste:', error);
+      console.error('Error identifying or saving waste:', error);
       toast({
         variant: 'destructive',
-        title: 'Analysis Failed',
-        description: 'Could not analyze the image. Please try again.',
+        title: 'Analysis or Storage Failed',
+        description: 'Could not analyze the image or save the data. Please try again.',
       });
     }
     setLoading(false);
