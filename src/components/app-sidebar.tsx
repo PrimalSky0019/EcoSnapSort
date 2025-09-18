@@ -10,6 +10,8 @@ import {
   SidebarMenuButton,
   SidebarSeparator,
   useSidebar,
+  SidebarGroup,
+  SidebarGroupLabel,
 } from '@/components/ui/sidebar';
 import {
   LayoutGrid,
@@ -30,53 +32,67 @@ import { usePathname } from 'next/navigation';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import Link from 'next/link';
 
-const links = [
+const topNavLinks = [
   {
     href: '/dashboard',
     label: 'Dashboard',
     icon: LayoutGrid,
   },
-  {
-    href: '/scan-waste',
-    label: 'Scan Waste',
-    icon: Camera,
-  },
-  {
-    href: '/schedule-pickup',
-    label: 'Schedule Pickup',
-    icon: CalendarClock,
-  },
-  {
-    href: '/locate-facilities',
-    label: 'Locate Facilities',
-    icon: MapPin,
-  },
-  {
-    href: '/track-vehicles',
-    label: 'Track Vehicles',
-    icon: Truck,
-  },
-  {
-    href: '/report-issue',
-    label: 'Report an Issue',
-    icon: Megaphone,
-  },
-  {
-    href: '/marketplace',
-    label: 'Marketplace',
-    icon: ShoppingBag,
-  },
-  {
-    href: '/training',
-    label: 'Training',
-    icon: BookOpen,
-  },
-  {
-    href: '/community-events',
-    label: 'Community Events',
-    icon: Users,
-  },
 ];
+
+const featureGroups = [
+    {
+        label: "Analyze",
+        links: [
+            {
+                href: '/scan-waste',
+                label: 'Scan Waste',
+                icon: Camera,
+            },
+            {
+                href: '/schedule-pickup',
+                label: 'Schedule Pickup',
+                icon: CalendarClock,
+            },
+             {
+                href: '/track-vehicles',
+                label: 'Track Vehicles',
+                icon: Truck,
+            },
+        ]
+    },
+    {
+        label: "Engage",
+        links: [
+            {
+                href: '/locate-facilities',
+                label: 'Locate Facilities',
+                icon: MapPin,
+            },
+            {
+                href: '/report-issue',
+                label: 'Report an Issue',
+                icon: Megaphone,
+            },
+            {
+                href: '/marketplace',
+                label: 'Marketplace',
+                icon: ShoppingBag,
+            },
+            {
+                href: '/training',
+                label: 'Training',
+                icon: BookOpen,
+            },
+            {
+                href: '/community-events',
+                label: 'Community Events',
+                icon: Users,
+            },
+        ]
+    }
+]
+
 
 export function AppSidebar() {
   const pathname = usePathname();
@@ -95,8 +111,8 @@ export function AppSidebar() {
         </div>
       </SidebarHeader>
       <SidebarContent className="p-2">
-        <SidebarMenu>
-          {links.map((link) => (
+         <SidebarMenu>
+          {topNavLinks.map((link) => (
             <SidebarMenuItem key={link.href}>
               <SidebarMenuButton
                 asChild
@@ -111,6 +127,27 @@ export function AppSidebar() {
             </SidebarMenuItem>
           ))}
         </SidebarMenu>
+        {featureGroups.map((group) => (
+            <SidebarGroup key={group.label} className='py-2'>
+                <SidebarGroupLabel>{group.label}</SidebarGroupLabel>
+                <SidebarMenu>
+                    {group.links.map((link) => (
+                        <SidebarMenuItem key={link.href}>
+                            <SidebarMenuButton
+                                asChild
+                                isActive={pathname === link.href}
+                                tooltip={{ children: link.label }}
+                            >
+                                <a href={link.href}>
+                                <link.icon />
+                                <span>{link.label}</span>
+                                </a>
+                            </SidebarMenuButton>
+                        </SidebarMenuItem>
+                    ))}
+                </SidebarMenu>
+            </SidebarGroup>
+        ))}
       </SidebarContent>
       <SidebarFooter className="p-2">
         <SidebarSeparator />
@@ -131,7 +168,7 @@ export function AppSidebar() {
           </SidebarMenuItem>
           <SidebarMenuItem>
             <SidebarMenuButton asChild tooltip={{ children: 'Logout' }}>
-              <Link href="/">
+              <Link href="/login">
                 <LogOut />
                 <span>Logout</span>
               </Link>
