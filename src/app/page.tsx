@@ -5,6 +5,7 @@ import { PageHeader } from '@/components/page-header';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import Image from 'next/image';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
+import { AppFooter } from '@/components/app-footer';
 
 const features = [
   {
@@ -110,7 +111,7 @@ export default function HomePage() {
                     <CardContent className="flex-1" />
                     <div className='p-6 pt-0'>
                         <Button className="w-full" asChild>
-                            <Link href="/signup">
+                            <Link href={feature.href}>
                             {feature.cta} <ArrowRight className="ml-2" />
                             </Link>
                         </Button>
@@ -123,12 +124,7 @@ export default function HomePage() {
         </section>
       </main>
 
-      <footer className="bg-secondary py-8">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8 text-center text-muted-foreground">
-          <p>&copy; {new Date().getFullYear()} Eco Snap Sort. All Rights Reserved.</p>
-          <p className="text-sm mt-2">Making our world cleaner, one community at a time.</p>
-        </div>
-      </footer>
+      <AppFooter />
     </div>
   );
 }
