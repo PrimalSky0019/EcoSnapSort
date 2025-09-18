@@ -87,13 +87,11 @@ export default function ScanWastePage() {
       const analysisResult = await identifyWaste({ photoDataUri: capturedImage });
       setResult(analysisResult);
 
-      // Store image in Firebase Storage
       const imageId = uuidv4();
       const storageRef = ref(storage, `waste-images/${imageId}.jpg`);
-      const uploadTask = await uploadString(storageRef, capturedImage, 'data_url');
-      const downloadURL = await getDownloadURL(uploadTask.ref);
+      await uploadString(storageRef, capturedImage, 'data_url');
+      const downloadURL = await getDownloadURL(storageRef);
 
-      // Store analysis in Firestore
       await addDoc(collection(db, "waste-analysis"), {
         ...analysisResult,
         imageUrl: downloadURL,
@@ -199,7 +197,7 @@ export default function ScanWastePage() {
                         Analysis Result: {result.isWaste ? result.wasteType : "Not Waste"}
                     </CardTitle>
                     <CardDescription>
-                        Here is the AI's analysis of your item.
+                        Here is the AI's analysis of your item. For locating nearby facilities, please check the "Locate Facilities" page.
                     </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
