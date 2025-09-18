@@ -13,18 +13,10 @@ import { addDoc, collection, doc, getDoc } from 'firebase/firestore';
 import { v4 as uuidv4 } from 'uuid';
 import { onAuthStateChanged } from 'firebase/auth';
 import dynamic from 'next/dynamic';
-import * as tf from '@tensorflow/tfjs';
+import { identifyWaste, IdentifyWasteOutput } from '@/ai/flows/identify-waste';
 
 
 const WasteMap = dynamic(() => import('./waste-map'), { ssr: false });
-
-// Define the output structure based on your needs.
-type WasteAnalysisResult = {
-  isWaste: boolean;
-  wasteType: 'Organic' | 'Recyclable' | 'Hazardous' | 'E-waste' | 'Other' | 'Not Waste';
-  disposalInstructions: string;
-  recyclingInfo?: string;
-};
 
 const disposalCenters = [
     { name: 'Greenfield Recycling Center', lat: 28.61, lng: 77.23, type: 'Recyclable' },
@@ -37,11 +29,10 @@ const disposalCenters = [
 export default function ScanWastePage() {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const imageRef = useRef<HTMLImageElement>(null);
   const [hasCameraPermission, setHasCameraPermission] = useState(true);
   const [capturedImage, setCapturedImage] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const [result, setResult] = useState<WasteAnalysisResult | null>(null);
+  const [result, setResult] = useState<IdentifyWasteOutput | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
   const { toast } = useToast();
 
@@ -112,84 +103,23 @@ export default function ScanWastePage() {
     setResult(null);
   };
   
-  async function getDisposalInstructions(wasteType: string): Promise<{ instruction: string; recyclingInfo?: string }> {
-      if (!wasteType || wasteType === 'Not Waste') {
-          return { instruction: "This item does not appear to be waste." };
-      }
-      try {
-          const docRef = doc(db, "disposal-instructions", wasteType.toLowerCase());
-          const docSnap = await getDoc(docRef);
-
-          if (docSnap.exists()) {
-              const data = docSnap.data();
-              return {
-                  instruction: data.instruction || `No specific instruction for ${wasteType}.`,
-                  recyclingInfo: data.recyclingInfo,
-              };
-          } else {
-              return { instruction: `No disposal instructions found for ${wasteType}.` };
-          }
-      } catch (error) {
-          console.error("Error fetching instructions: ", error);
-          return { instruction: "Could not retrieve disposal instructions at this time." };
-      }
-  }
-
-  // Placeholder for the client-side classification logic
-  async function classifyImageClientSide(imageElement: HTMLImageElement): Promise<WasteAnalysisResult['wasteType']> {
-      // In a real application, you would load your trained TensorFlow.js model here.
-      // e.g., const model = await tf.loadLayersModel('/model/model.json');
-      // For now, we'll simulate a classification result.
-      console.log('Simulating client-side image classification...');
-      
-      // Since we don't have a model, we'll return a random waste type for demonstration.
-      const wasteTypes: WasteAnalysisResult['wasteType'][] = ['Organic', 'Recyclable', 'Hazardous', 'E-waste', 'Other'];
-      const randomIndex = Math.floor(Math.random() * wasteTypes.length);
-
-      // Example of how you might use the model:
-      // const tensor = tf.browser.fromPixels(imageElement).resizeNearestNeighbor([224, 224]).toFloat().expandDims();
-      // const prediction = model.predict(tensor) as tf.Tensor;
-      // const resultIndex = (await prediction.argMax(1).data())[0];
-      // const wasteType = wasteTypes[resultIndex];
-
-      return wasteTypes[randomIndex];
-  }
-
-
   const analyzeImage = async () => {
-    if (!capturedImage || !imageRef.current) {
-        toast({
-            variant: 'destructive',
-            title: 'Analysis Failed',
-            description: 'No image to analyze.',
-        });
-        return;
-    };
+    if (!capturedImage) return;
     setLoading(true);
     setResult(null);
     
     try {
-      // 1. Classify the image on the client side
-      const wasteType = await classifyImageClientSide(imageRef.current);
-
-      // 2. Fetch disposal instructions from Firestore
-      const { instruction, recyclingInfo } = await getDisposalInstructions(wasteType);
-
-      const analysisResult: WasteAnalysisResult = {
-          isWaste: wasteType !== 'Not Waste',
-          wasteType: wasteType,
-          disposalInstructions: instruction,
-          recyclingInfo: recyclingInfo,
-      };
+      // 1. Analyze the image with the Genkit AI flow
+      const analysisResult = await identifyWaste({ photoDataUri: capturedImage });
       setResult(analysisResult);
 
-      // 3. Upload the image to Firebase Storage
+      // 2. Upload the image to Firebase Storage
       const imageId = uuidv4();
       const storageRef = ref(storage, `waste-images/${imageId}.jpg`);
       await uploadString(storageRef, capturedImage, 'data_url');
       const downloadURL = await getDownloadURL(storageRef);
 
-      // 4. Store the analysis and metadata in Firestore
+      // 3. Store the analysis and metadata in Firestore
       await addDoc(collection(db, "waste-analysis"), {
         ...analysisResult,
         imageUrl: downloadURL,
@@ -199,15 +129,15 @@ export default function ScanWastePage() {
 
       toast({
         title: 'Analysis Complete',
-        description: 'Image and analysis have been saved.',
+        description: `Waste identified as: ${analysisResult.wasteType}`,
       });
 
     } catch (error) {
       console.error('Error identifying or saving waste:', error);
       toast({
         variant: 'destructive',
-        title: 'Analysis or Storage Failed',
-        description: 'Could not analyze the image. Please ensure your model is loaded correctly.',
+        title: 'Analysis Failed',
+        description: 'Could not analyze the image. The AI service may be unavailable.',
       });
     }
     setLoading(false);
@@ -223,6 +153,8 @@ export default function ScanWastePage() {
         case 'Recyclable':
         return CheckCircle;
         case 'Hazardous':
+        case 'Electronics':
+        case 'E-waste':
         return XCircle;
         default:
         return Info;
@@ -251,7 +183,7 @@ export default function ScanWastePage() {
             )}
 
             {capturedImage ? (
-                <img ref={imageRef} src={capturedImage} alt="Captured waste" className="h-full w-full object-contain" />
+                <img src={capturedImage} alt="Captured waste" className="h-full w-full object-contain" />
             ) : (
                 <video ref={videoRef} className="h-full w-full object-cover" autoPlay playsInline muted />
             )}

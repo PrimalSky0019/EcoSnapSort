@@ -2,9 +2,6 @@
 /**
  * @fileOverview Identifies the type of waste from an image.
  *
- * THIS FILE IS DEPRECATED AND REPLACED BY A CLIENT-SIDE TENSORFLOW.JS MODEL.
- * The logic is now in src/app/(app)/scan-waste/page.tsx.
- *
  * - identifyWaste - A function that handles the waste identification process.
  * - IdentifyWasteInput - The input type for the identifyWaste function.
  * - IdentifyWasteOutput - The return type for the identifyWaste function.
@@ -24,13 +21,38 @@ export type IdentifyWasteInput = z.infer<typeof IdentifyWasteInputSchema>;
 
 const IdentifyWasteOutputSchema = z.object({
   isWaste: z.boolean().describe('Whether or not the image contains waste.'),
-  wasteType: z.enum(['Organic', 'Recyclable', 'Hazardous', 'E-waste', 'Other']).describe('The type of waste identified.'),
+  wasteType: z.enum(['Organic', 'Recyclable', 'Hazardous', 'E-waste', 'Cotton', 'Electronics', 'Other']).describe('The type of waste identified.'),
   disposalInstructions: z.string().describe('Instructions on how to properly dispose of the identified waste.'),
   recyclingInfo: z.string().optional().describe('Information about recycling the item, if applicable.'),
 });
 export type IdentifyWasteOutput = z.infer<typeof IdentifyWasteOutputSchema>;
 
 export async function identifyWaste(input: IdentifyWasteInput): Promise<IdentifyWasteOutput> {
-  // This flow is deprecated.
-  throw new Error("This AI flow is deprecated. Use the client-side TensorFlow.js model instead.");
+  return identifyWasteFlow(input);
 }
+
+const prompt = ai.definePrompt({
+  name: 'identifyWastePrompt',
+  input: {schema: IdentifyWasteInputSchema},
+  output: {schema: IdentifyWasteOutputSchema},
+  prompt: `You are a waste management expert. Analyze the provided image and identify the type of waste it contains.
+
+Determine if the item is waste. If it is, classify it into one of the following categories: Organic, Recyclable, Hazardous, E-waste, Cotton, Electronics, or Other.
+
+Provide clear and concise disposal instructions for the identified waste type. If applicable, also provide recycling information.
+
+Image: {{media url=photoDataUri}}
+`,
+});
+
+const identifyWasteFlow = ai.defineFlow(
+  {
+    name: 'identifyWasteFlow',
+    inputSchema: IdentifyWasteInputSchema,
+    outputSchema: IdentifyWasteOutputSchema,
+  },
+  async input => {
+    const {output} = await prompt(input);
+    return output!;
+  }
+);
