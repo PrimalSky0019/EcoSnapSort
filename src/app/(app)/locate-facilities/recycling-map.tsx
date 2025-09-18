@@ -38,34 +38,37 @@ const facilities = [
 
 export default function RecyclingMap() {
   return (
-    <MapContainer
-      center={[22.97, 77.59]} // Center of India
-      zoom={5}
-      style={{ height: "500px", width: "100%" }}
-      className="rounded-lg"
-    >
-      <TileLayer
-        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a>'
-        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-      />
-
-      {facilities.map((f) => (
-        <Marker key={f.id} position={f.coords}>
-          <Popup>
-            <strong>{f.name}</strong> <br />
-            ♻️ Type: {f.type} <br />
-            {f.contact} <br />
-            <a
-              href={`mailto:${f.contact.replace("📧 ", "")}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-primary hover:underline"
+    <div style={{ height: "500px", width: "100%" }}>
+        <MapContainer
+            center={[22.97, 77.59]} // Center of India
+            zoom={5}
+            style={{ height: "100%", width: "100%" }}
+            className="rounded-lg"
+            key="recycling-map"
             >
-              Contact Facility
-            </a>
-          </Popup>
-        </Marker>
-      ))}
-    </MapContainer>
+            <TileLayer
+                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a>'
+                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+            />
+
+            {facilities.map((f) => (
+                <Marker key={f.id} position={f.coords}>
+                <Popup>
+                    <strong>{f.name}</strong> <br />
+                    ♻️ Type: {f.type} <br />
+                    {f.contact} <br />
+                    <a
+                    href={`mailto:${f.contact.replace("📧 ", "")}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-primary hover:underline"
+                    >
+                    Contact Facility
+                    </a>
+                </Popup>
+                </Marker>
+            ))}
+        </MapContainer>
+    </div>
   );
 }
