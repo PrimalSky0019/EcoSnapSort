@@ -21,10 +21,25 @@ export type IdentifyWasteInput = z.infer<typeof IdentifyWasteInputSchema>;
 
 const IdentifyWasteOutputSchema = z.object({
   isWaste: z.boolean().describe('Whether or not the image contains waste.'),
-  wasteType: z.enum(['Organic', 'Recyclable', 'Hazardous', 'E-waste', 'Cotton', 'Electronics', 'Other']).describe('The type of waste identified.'),
+  wasteType: z
+    .enum(['Organic', 'Recyclable', 'Hazardous', 'E-waste', 'Cotton', 'Electronics', 'Other'])
+    .describe('The type of waste identified.'),
   disposalInstructions: z.string().describe('Instructions on how to properly dispose of the identified waste.'),
   recyclingInfo: z.string().optional().describe('Information about recycling the item, if applicable.'),
-  decompositionTime: z.string().optional().describe('An estimate of how long the waste will take to decompose (e.g., "2-5 weeks", "450 years").'),
+  decompositionTime: z
+    .string()
+    .optional()
+    .describe('An estimate of how long the waste will take to decompose (e.g., "2-5 weeks", "450 years").'),
+  suggestedCompanies: z
+    .array(
+      z.object({
+        name: z.string().describe('The name of the recycling company.'),
+        description: z.string().describe('A brief description of what the company handles.'),
+        contact: z.string().describe('Contact information for the company (e.g., phone number, email).'),
+      })
+    )
+    .optional()
+    .describe('A list of suggested companies that handle this type of waste.'),
 });
 export type IdentifyWasteOutput = z.infer<typeof IdentifyWasteOutputSchema>;
 
@@ -44,7 +59,9 @@ Provide clear and concise disposal instructions. If the item is non-biodegradabl
 
 Also, provide an estimated time for how long the item will take to decompose under normal landfill conditions. For items that are non-biodegradable or take hundreds of years, emphasize this.
 
-If applicable, also provide recycling information.
+If applicable, provide recycling information.
+
+Finally, suggest 1 to 3 fictional but plausible-sounding recycling companies that specialize in handling the identified type of waste. For each company, provide a name, a short description of their services, and a fictional contact detail (phone or email).
 
 Image: {{media url=photoDataUri}}
 `,

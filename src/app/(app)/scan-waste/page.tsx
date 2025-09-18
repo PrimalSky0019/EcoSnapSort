@@ -4,7 +4,7 @@ import { PageHeader } from '@/components/page-header';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Camera, CheckCircle, HelpCircle, Info, Loader2, RefreshCw, Send, Trash2, XCircle, Clock } from 'lucide-react';
+import { Camera, CheckCircle, HelpCircle, Info, Loader2, RefreshCw, Send, Trash2, XCircle, Clock, Phone, Building } from 'lucide-react';
 import React, { useRef, useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { db, storage, auth } from '@/lib/firebase';
@@ -238,6 +238,30 @@ export default function ScanWastePage() {
                             <h3 className="font-semibold">Recycling Information</h3>
                             <p className="text-muted-foreground">{result.recyclingInfo}</p>
                         </div>
+                    )}
+
+                    {result.suggestedCompanies && result.suggestedCompanies.length > 0 && (
+                      <div className="space-y-4 pt-4">
+                        <h3 className="font-semibold flex items-center gap-2">
+                          <Building className='h-5 w-5' />
+                          Suggested Recycling Companies
+                        </h3>
+                        <div className="grid gap-4">
+                          {result.suggestedCompanies.map((company) => (
+                            <div key={company.name} className="flex gap-4 p-4 rounded-md border">
+                               <Building className="h-6 w-6 text-primary mt-1" />
+                               <div className='flex-1'>
+                                <h4 className="font-bold">{company.name}</h4>
+                                <p className="text-sm text-muted-foreground">{company.description}</p>
+                                 <div className="flex items-center gap-2 mt-2 text-sm">
+                                  <Phone className='h-4 w-4'/>
+                                   <span>{company.contact}</span>
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
                     )}
                 </CardContent>
             </Card>
