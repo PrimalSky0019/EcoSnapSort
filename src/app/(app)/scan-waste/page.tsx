@@ -8,10 +8,11 @@ import { Camera, CheckCircle, HelpCircle, Info, Loader2, RefreshCw, Send, Trash2
 import React, { useRef, useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { identifyWaste, type IdentifyWasteOutput } from '@/ai/flows/identify-waste';
-import { db, storage } from '@/lib/firebase';
+import { db, storage, auth } from '@/lib/firebase';
 import { getDownloadURL, ref, uploadString } from 'firebase/storage';
 import { addDoc, collection } from 'firebase/firestore';
 import { v4 as uuidv4 } from 'uuid';
+import { onAuthStateChanged } from 'firebase/auth';
 
 
 export default function ScanWastePage() {
@@ -21,7 +22,19 @@ export default function ScanWastePage() {
   const [capturedImage, setCapturedImage] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<IdentifyWasteOutput | null>(null);
+  const [userId, setUserId] = useState<string | null>(null);
   const { toast } = useToast();
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      if (user) {
+        setUserId(user.uid);
+      } else {
+        setUserId(null);
+      }
+    });
+    return () => unsubscribe();
+  }, []);
 
   useEffect(() => {
     const getCameraPermission = async () => {
@@ -84,18 +97,22 @@ export default function ScanWastePage() {
     setLoading(true);
     setResult(null);
     try {
+      // 1. Analyze the image with the AI flow
       const analysisResult = await identifyWaste({ photoDataUri: capturedImage });
       setResult(analysisResult);
 
+      // 2. Upload the image to Firebase Storage
       const imageId = uuidv4();
       const storageRef = ref(storage, `waste-images/${imageId}.jpg`);
       await uploadString(storageRef, capturedImage, 'data_url');
       const downloadURL = await getDownloadURL(storageRef);
 
+      // 3. Store the analysis and metadata in Firestore
       await addDoc(collection(db, "waste-analysis"), {
         ...analysisResult,
         imageUrl: downloadURL,
         createdAt: new Date(),
+        userId: userId, // Store the user's ID
       });
 
       toast({
@@ -173,7 +190,7 @@ export default function ScanWastePage() {
                     <Button variant="outline" onClick={retakeImage} disabled={loading}>
                         <RefreshCw className='mr-2' /> Retake
                     </Button>
-                    <Button onClick={analyzeImage} disabled={loading}>
+                    <Button onClick={analyzeImage} disabled={loading || !userId}>
                         {loading ? (
                             <><Loader2 className='mr-2 animate-spin' /> Analyzing...</>
                         ) : (
