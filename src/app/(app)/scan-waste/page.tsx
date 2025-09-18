@@ -272,7 +272,7 @@ export default function ScanWastePage() {
                     )}
                     <div className={relevantCenters.length > 0 ? 'space-y-4' : 'hidden'}>
                         <h3 className="font-semibold">Nearby Disposal Centers</h3>
-                        <WasteMap centers={relevantCenters} />
+                        <WasteMap />
                     </div>
                 </CardContent>
             </Card>
