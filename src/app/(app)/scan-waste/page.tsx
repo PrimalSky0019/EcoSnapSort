@@ -12,8 +12,8 @@ import { getDownloadURL, ref, uploadString } from 'firebase/storage';
 import { addDoc, collection, doc, getDoc } from 'firebase/firestore';
 import { v4 as uuidv4 } from 'uuid';
 import { onAuthStateChanged } from 'firebase/auth';
-import * as tf from '@tensorflow/tfjs';
 import dynamic from 'next/dynamic';
+import axios from 'axios';
 
 const WasteMap = dynamic(() => import('./waste-map'), { ssr: false });
 
@@ -24,10 +24,6 @@ type WasteAnalysisResult = {
   disposalInstructions: string;
   recyclingInfo?: string;
 };
-
-// This is a placeholder for your model's labels.
-// IMPORTANT: The order must match the output of your classification model.
-const WASTE_LABELS = ['Organic', 'Recyclable', 'Hazardous', 'E-waste', 'Other'];
 
 const disposalCenters = [
     { name: 'Greenfield Recycling Center', lat: 28.61, lng: 77.23, type: 'Recyclable' },
@@ -47,31 +43,6 @@ export default function ScanWastePage() {
   const [result, setResult] = useState<WasteAnalysisResult | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
   const { toast } = useToast();
-  const [model, setModel] = useState<tf.LayersModel | null>(null);
-
-  // Load the TensorFlow.js model
-  useEffect(() => {
-    async function loadModel() {
-      try {
-        // IMPORTANT: Make sure your model files are in the /public/model/ directory.
-        const loadedModel = await tf.loadLayersModel('/model/model.json');
-        setModel(loadedModel);
-        toast({
-          title: 'Model Loaded',
-          description: 'The waste identification model is ready.',
-        });
-      } catch (error) {
-        console.error("Error loading model: ", error);
-        toast({
-          variant: 'destructive',
-          title: 'Model Load Failed',
-          description: 'Could not load the waste identification model. Please try refreshing the page.',
-        });
-      }
-    }
-    loadModel();
-  }, [toast]);
-
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
@@ -163,13 +134,25 @@ export default function ScanWastePage() {
       }
   }
 
+  // Helper to convert data URI to Blob
+  function dataURItoBlob(dataURI: string) {
+    const byteString = atob(dataURI.split(',')[1]);
+    const mimeString = dataURI.split(',')[0].split(':')[1].split(';')[0];
+    const ab = new ArrayBuffer(byteString.length);
+    const ia = new Uint8Array(ab);
+    for (let i = 0; i < byteString.length; i++) {
+        ia[i] = byteString.charCodeAt(i);
+    }
+    return new Blob([ab], { type: mimeString });
+  }
+
 
   const analyzeImage = async () => {
-    if (!capturedImage || !imageRef.current || !model) {
+    if (!capturedImage) {
         toast({
             variant: 'destructive',
             title: 'Analysis Failed',
-            description: !model ? 'The AI model is not loaded yet.' : 'No image to analyze.',
+            description: 'No image to analyze.',
         });
         return;
     };
@@ -177,15 +160,20 @@ export default function ScanWastePage() {
     setResult(null);
     
     try {
-        // 1. Classify image with TensorFlow.js
-        const imageElement = imageRef.current;
-        const tensor = tf.browser.fromPixels(imageElement).resizeNearestNeighbor([224, 224]).toFloat().expandDims();
-        const predictions = model.predict(tensor) as tf.Tensor;
-        const highestPredictionIndex = predictions.argMax(-1).dataSync()[0];
-        const wasteType = WASTE_LABELS[highestPredictionIndex] as WasteAnalysisResult['wasteType'];
+        // 1. Send image to backend for classification
+        const formData = new FormData();
+        const imageBlob = dataURItoBlob(capturedImage);
+        formData.append('image', imageBlob, 'waste-image.jpg');
+
+        // IMPORTANT: Replace with your actual backend endpoint
+        const predictionEndpoint = 'https://your-backend-domain/predict';
+        const response = await axios.post(predictionEndpoint, formData, {
+            headers: {
+                'Content-Type': 'multipart/form-data',
+            },
+        });
         
-        tensor.dispose();
-        predictions.dispose();
+        const wasteType = response.data.type as WasteAnalysisResult['wasteType'];
 
         // 2. Fetch disposal instructions from Firestore
         const { instruction, recyclingInfo } = await getDisposalInstructions(wasteType);
@@ -222,7 +210,7 @@ export default function ScanWastePage() {
       toast({
         variant: 'destructive',
         title: 'Analysis or Storage Failed',
-        description: 'Could not analyze the image or save the data. Please try again.',
+        description: 'Could not analyze the image. Please ensure the backend service is running and accessible.',
       });
     }
     setLoading(false);
@@ -288,7 +276,7 @@ export default function ScanWastePage() {
                     <Button variant="outline" onClick={retakeImage} disabled={loading}>
                         <RefreshCw className='mr-2' /> Retake
                     </Button>
-                    <Button onClick={analyzeImage} disabled={loading || !userId || !model}>
+                    <Button onClick={analyzeImage} disabled={loading || !userId}>
                         {loading ? (
                             <><Loader2 className='mr-2 animate-spin' /> Analyzing...</>
                         ) : (
