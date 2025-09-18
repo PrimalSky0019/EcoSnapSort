@@ -1,8 +1,9 @@
 "use client";
+import React from "react";
 import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 
-export default function WasteMap() {
+function WasteMap() {
   return (
     <MapContainer
       center={[20, 77]} 
@@ -19,3 +20,5 @@ export default function WasteMap() {
     </MapContainer>
   );
 }
+
+export default React.memo(WasteMap);

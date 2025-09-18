@@ -242,6 +242,7 @@ export default function ScanWastePage() {
         </CardFooter>
       </Card>
 
+      <div className={!result ? 'hidden' : ''}>
         {result && (
             <Card className="mx-auto max-w-2xl">
                 <CardHeader>
@@ -277,6 +278,7 @@ export default function ScanWastePage() {
                 </CardContent>
             </Card>
         )}
+      </div>
     </div>
   );
 }
