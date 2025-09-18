@@ -13,6 +13,9 @@ import { addDoc, collection, doc, getDoc } from 'firebase/firestore';
 import { v4 as uuidv4 } from 'uuid';
 import { onAuthStateChanged } from 'firebase/auth';
 import * as tf from '@tensorflow/tfjs';
+import dynamic from 'next/dynamic';
+
+const WasteMap = dynamic(() => import('./waste-map'), { ssr: false });
 
 // Define the output structure based on your needs.
 type WasteAnalysisResult = {
@@ -25,6 +28,13 @@ type WasteAnalysisResult = {
 // This is a placeholder for your model's labels.
 // IMPORTANT: The order must match the output of your classification model.
 const WASTE_LABELS = ['Organic', 'Recyclable', 'Hazardous', 'E-waste', 'Other'];
+
+const disposalCenters = [
+    { name: 'Greenfield Recycling Center', lat: 28.61, lng: 77.23, type: 'Recyclable' },
+    { name: 'Eco Scrap Traders', lat: 28.62, lng: 77.21, type: 'Recyclable' },
+    { name: 'Central Waste Facility', lat: 28.59, lng: 77.22, type: 'Hazardous' },
+    { name: 'Southside Compost Hub', lat: 28.60, lng: 77.25, type: 'Organic' },
+];
 
 
 export default function ScanWastePage() {
@@ -171,7 +181,6 @@ export default function ScanWastePage() {
         const imageElement = imageRef.current;
         const tensor = tf.browser.fromPixels(imageElement).resizeNearestNeighbor([224, 224]).toFloat().expandDims();
         const predictions = model.predict(tensor) as tf.Tensor;
-        const predictionData = await predictions.data();
         const highestPredictionIndex = predictions.argMax(-1).dataSync()[0];
         const wasteType = WASTE_LABELS[highestPredictionIndex] as WasteAnalysisResult['wasteType'];
         
@@ -237,6 +246,8 @@ export default function ScanWastePage() {
   
   const ResultIcon = getResultIcon();
 
+  const relevantCenters = result ? disposalCenters.filter(center => center.type === result.wasteType) : [];
+
   return (
     <div className="space-y-8">
       <PageHeader
@@ -300,11 +311,8 @@ export default function ScanWastePage() {
                         <ResultIcon className='h-8 w-8 text-primary' />
                         Analysis Result: {result.isWaste ? result.wasteType : "Not Waste"}
                     </CardTitle>
-                    <CardDescription>
-                        Here is the analysis of your item. For locating nearby facilities, please check the "Locate Facilities" page.
-                    </CardDescription>
                 </CardHeader>
-                <CardContent className="space-y-4">
+                <CardContent className="space-y-6">
                     <div className="space-y-1">
                         <h3 className="font-semibold">Disposal Instructions</h3>
                         <p className="text-muted-foreground">{result.disposalInstructions}</p>
@@ -313,6 +321,12 @@ export default function ScanWastePage() {
                          <div className="space-y-1">
                             <h3 className="font-semibold">Recycling Information</h3>
                             <p className="text-muted-foreground">{result.recyclingInfo}</p>
+                        </div>
+                    )}
+                    {relevantCenters.length > 0 && (
+                        <div className="space-y-4">
+                            <h3 className="font-semibold">Nearby Disposal Centers</h3>
+                            <WasteMap centers={relevantCenters} />
                         </div>
                     )}
                 </CardContent>
