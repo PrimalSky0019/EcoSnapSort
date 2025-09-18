@@ -4,12 +4,12 @@ import { PageHeader } from '@/components/page-header';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Camera, CheckCircle, HelpCircle, Info, Loader2, RefreshCw, Send, Trash2, XCircle } from 'lucide-react';
+import { Camera, CheckCircle, HelpCircle, Info, Loader2, RefreshCw, Send, Trash2, XCircle, Clock } from 'lucide-react';
 import React, { useRef, useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { db, storage, auth } from '@/lib/firebase';
 import { getDownloadURL, ref, uploadString } from 'firebase/storage';
-import { addDoc, collection, doc, getDoc } from 'firebase/firestore';
+import { addDoc, collection } from 'firebase/firestore';
 import { v4 as uuidv4 } from 'uuid';
 import { onAuthStateChanged } from 'firebase/auth';
 import dynamic from 'next/dynamic';
@@ -230,6 +230,15 @@ export default function ScanWastePage() {
                     </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-6">
+                    {result.decompositionTime && (
+                         <div className="space-y-1">
+                            <h3 className="font-semibold flex items-center gap-2">
+                                <Clock className='h-5 w-5' />
+                                Estimated Decomposition Time
+                            </h3>
+                            <p className="text-muted-foreground pl-7">{result.decompositionTime}</p>
+                        </div>
+                    )}
                     <div className="space-y-1">
                         <h3 className="font-semibold">Disposal Instructions</h3>
                         <p className="text-muted-foreground">{result.disposalInstructions}</p>

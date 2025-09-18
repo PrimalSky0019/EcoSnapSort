@@ -24,6 +24,7 @@ const IdentifyWasteOutputSchema = z.object({
   wasteType: z.enum(['Organic', 'Recyclable', 'Hazardous', 'E-waste', 'Cotton', 'Electronics', 'Other']).describe('The type of waste identified.'),
   disposalInstructions: z.string().describe('Instructions on how to properly dispose of the identified waste.'),
   recyclingInfo: z.string().optional().describe('Information about recycling the item, if applicable.'),
+  decompositionTime: z.string().optional().describe('An estimate of how long the waste will take to decompose (e.g., "2-5 weeks", "450 years").'),
 });
 export type IdentifyWasteOutput = z.infer<typeof IdentifyWasteOutputSchema>;
 
@@ -39,7 +40,11 @@ const prompt = ai.definePrompt({
 
 Determine if the item is waste. If it is, classify it into one of the following categories: Organic, Recyclable, Hazardous, E-waste, Cotton, Electronics, or Other.
 
-Provide clear and concise disposal instructions for the identified waste type. If applicable, also provide recycling information.
+Provide clear and concise disposal instructions for the identified waste type. 
+
+Also, provide an estimated time for how long the item will take to decompose under normal landfill conditions.
+
+If applicable, also provide recycling information.
 
 Image: {{media url=photoDataUri}}
 `,
