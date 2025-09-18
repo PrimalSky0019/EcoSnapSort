@@ -23,6 +23,7 @@ const disposalCenters = [
     { name: 'Eco Scrap Traders', lat: 28.62, lng: 77.21, type: 'Recyclable' },
     { name: 'Central Waste Facility', lat: 28.59, lng: 77.22, type: 'Hazardous' },
     { name: 'Southside Compost Hub', lat: 28.60, lng: 77.25, type: 'Organic' },
+    { name: 'E-Waste Collectors', lat: 28.63, lng: 77.24, type: 'E-waste' },
 ];
 
 
@@ -120,12 +121,14 @@ export default function ScanWastePage() {
       const downloadURL = await getDownloadURL(storageRef);
 
       // 3. Store the analysis and metadata in Firestore
-      await addDoc(collection(db, "waste-analysis"), {
-        ...analysisResult,
-        imageUrl: downloadURL,
-        createdAt: new Date(),
-        userId: userId,
-      });
+      if (userId) {
+        await addDoc(collection(db, "waste-analysis"), {
+          ...analysisResult,
+          imageUrl: downloadURL,
+          createdAt: new Date(),
+          userId: userId,
+        });
+      }
 
       toast({
         title: 'Analysis Complete',
@@ -163,7 +166,25 @@ export default function ScanWastePage() {
   
   const ResultIcon = getResultIcon();
 
-  const relevantCenters = result ? disposalCenters.filter(center => center.type === result.wasteType) : [];
+  const getRelevantCenters = () => {
+    if (!result || !result.isWaste) return [];
+    
+    const nonBiodegradableTypes: (typeof result.wasteType)[] = ['Recyclable', 'E-waste', 'Electronics', 'Hazardous'];
+    
+    if (nonBiodegradableTypes.includes(result.wasteType)) {
+      // Show all recycling, e-waste, and hazardous centers
+      return disposalCenters.filter(center => 
+        center.type === 'Recyclable' || 
+        center.type === 'E-waste' || 
+        center.type === 'Hazardous'
+      );
+    }
+    
+    // For Organic and other biodegradable types
+    return disposalCenters.filter(center => center.type === result.wasteType);
+  }
+
+  const relevantCenters = getRelevantCenters();
 
   return (
     <div className="space-y-8">

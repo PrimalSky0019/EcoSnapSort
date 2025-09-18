@@ -40,9 +40,9 @@ const prompt = ai.definePrompt({
 
 Determine if the item is waste. If it is, classify it into one of the following categories: Organic, Recyclable, Hazardous, E-waste, Cotton, Electronics, or Other.
 
-Provide clear and concise disposal instructions for the identified waste type. 
+Provide clear and concise disposal instructions. If the item is non-biodegradable (e.g., plastic, metal, glass, electronics), your primary instruction should be to recycle it.
 
-Also, provide an estimated time for how long the item will take to decompose under normal landfill conditions.
+Also, provide an estimated time for how long the item will take to decompose under normal landfill conditions. For items that are non-biodegradable or take hundreds of years, emphasize this.
 
 If applicable, also provide recycling information.
 
