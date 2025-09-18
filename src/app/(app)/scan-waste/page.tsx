@@ -12,19 +12,7 @@ import { getDownloadURL, ref, uploadString } from 'firebase/storage';
 import { addDoc, collection } from 'firebase/firestore';
 import { v4 as uuidv4 } from 'uuid';
 import { onAuthStateChanged } from 'firebase/auth';
-import dynamic from 'next/dynamic';
 import { identifyWaste, IdentifyWasteOutput } from '@/ai/flows/identify-waste';
-
-
-const WasteMap = dynamic(() => import('./waste-map'), { ssr: false });
-
-const disposalCenters = [
-    { name: 'Greenfield Recycling Center', lat: 28.61, lng: 77.23, type: 'Recyclable' },
-    { name: 'Eco Scrap Traders', lat: 28.62, lng: 77.21, type: 'Recyclable' },
-    { name: 'Central Waste Facility', lat: 28.59, lng: 77.22, type: 'Hazardous' },
-    { name: 'Southside Compost Hub', lat: 28.60, lng: 77.25, type: 'Organic' },
-    { name: 'E-Waste Collectors', lat: 28.63, lng: 77.24, type: 'E-waste' },
-];
 
 
 export default function ScanWastePage() {
@@ -166,26 +154,6 @@ export default function ScanWastePage() {
   
   const ResultIcon = getResultIcon();
 
-  const getRelevantCenters = () => {
-    if (!result || !result.isWaste) return [];
-    
-    const nonBiodegradableTypes: (typeof result.wasteType)[] = ['Recyclable', 'E-waste', 'Electronics', 'Hazardous'];
-    
-    if (nonBiodegradableTypes.includes(result.wasteType)) {
-      // Show all recycling, e-waste, and hazardous centers
-      return disposalCenters.filter(center => 
-        center.type === 'Recyclable' || 
-        center.type === 'E-waste' || 
-        center.type === 'Hazardous'
-      );
-    }
-    
-    // For Organic and other biodegradable types
-    return disposalCenters.filter(center => center.type === result.wasteType);
-  }
-
-  const relevantCenters = getRelevantCenters();
-
   return (
     <div className="space-y-8">
       <PageHeader
@@ -271,10 +239,6 @@ export default function ScanWastePage() {
                             <p className="text-muted-foreground">{result.recyclingInfo}</p>
                         </div>
                     )}
-                    <div className={relevantCenters.length > 0 ? 'space-y-4' : 'hidden'}>
-                        <h3 className="font-semibold">Nearby Disposal Centers</h3>
-                        <WasteMap />
-                    </div>
                 </CardContent>
             </Card>
         )}
