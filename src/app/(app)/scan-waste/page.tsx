@@ -13,7 +13,8 @@ import { addDoc, collection, doc, getDoc } from 'firebase/firestore';
 import { v4 as uuidv4 } from 'uuid';
 import { onAuthStateChanged } from 'firebase/auth';
 import dynamic from 'next/dynamic';
-import axios from 'axios';
+import * as tf from '@tensorflow/tfjs';
+
 
 const WasteMap = dynamic(() => import('./waste-map'), { ssr: false });
 
@@ -134,21 +135,29 @@ export default function ScanWastePage() {
       }
   }
 
-  // Helper to convert data URI to Blob
-  function dataURItoBlob(dataURI: string) {
-    const byteString = atob(dataURI.split(',')[1]);
-    const mimeString = dataURI.split(',')[0].split(':')[1].split(';')[0];
-    const ab = new ArrayBuffer(byteString.length);
-    const ia = new Uint8Array(ab);
-    for (let i = 0; i < byteString.length; i++) {
-        ia[i] = byteString.charCodeAt(i);
-    }
-    return new Blob([ab], { type: mimeString });
+  // Placeholder for the client-side classification logic
+  async function classifyImageClientSide(imageElement: HTMLImageElement): Promise<WasteAnalysisResult['wasteType']> {
+      // In a real application, you would load your trained TensorFlow.js model here.
+      // e.g., const model = await tf.loadLayersModel('/model/model.json');
+      // For now, we'll simulate a classification result.
+      console.log('Simulating client-side image classification...');
+      
+      // Since we don't have a model, we'll return a random waste type for demonstration.
+      const wasteTypes: WasteAnalysisResult['wasteType'][] = ['Organic', 'Recyclable', 'Hazardous', 'E-waste', 'Other'];
+      const randomIndex = Math.floor(Math.random() * wasteTypes.length);
+
+      // Example of how you might use the model:
+      // const tensor = tf.browser.fromPixels(imageElement).resizeNearestNeighbor([224, 224]).toFloat().expandDims();
+      // const prediction = model.predict(tensor) as tf.Tensor;
+      // const resultIndex = (await prediction.argMax(1).data())[0];
+      // const wasteType = wasteTypes[resultIndex];
+
+      return wasteTypes[randomIndex];
   }
 
 
   const analyzeImage = async () => {
-    if (!capturedImage) {
+    if (!capturedImage || !imageRef.current) {
         toast({
             variant: 'destructive',
             title: 'Analysis Failed',
@@ -160,31 +169,19 @@ export default function ScanWastePage() {
     setResult(null);
     
     try {
-        // 1. Send image to backend for classification
-        const formData = new FormData();
-        const imageBlob = dataURItoBlob(capturedImage);
-        formData.append('image', imageBlob, 'waste-image.jpg');
+      // 1. Classify the image on the client side
+      const wasteType = await classifyImageClientSide(imageRef.current);
 
-        // IMPORTANT: Replace with your actual backend endpoint
-        const predictionEndpoint = 'https://your-backend-domain/predict';
-        const response = await axios.post(predictionEndpoint, formData, {
-            headers: {
-                'Content-Type': 'multipart/form-data',
-            },
-        });
-        
-        const wasteType = response.data.type as WasteAnalysisResult['wasteType'];
+      // 2. Fetch disposal instructions from Firestore
+      const { instruction, recyclingInfo } = await getDisposalInstructions(wasteType);
 
-        // 2. Fetch disposal instructions from Firestore
-        const { instruction, recyclingInfo } = await getDisposalInstructions(wasteType);
-
-        const analysisResult: WasteAnalysisResult = {
-            isWaste: wasteType !== 'Not Waste',
-            wasteType: wasteType,
-            disposalInstructions: instruction,
-            recyclingInfo: recyclingInfo,
-        };
-        setResult(analysisResult);
+      const analysisResult: WasteAnalysisResult = {
+          isWaste: wasteType !== 'Not Waste',
+          wasteType: wasteType,
+          disposalInstructions: instruction,
+          recyclingInfo: recyclingInfo,
+      };
+      setResult(analysisResult);
 
       // 3. Upload the image to Firebase Storage
       const imageId = uuidv4();
@@ -210,7 +207,7 @@ export default function ScanWastePage() {
       toast({
         variant: 'destructive',
         title: 'Analysis or Storage Failed',
-        description: 'Could not analyze the image. Please ensure the backend service is running and accessible.',
+        description: 'Could not analyze the image. Please ensure your model is loaded correctly.',
       });
     }
     setLoading(false);
