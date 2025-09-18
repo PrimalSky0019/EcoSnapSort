@@ -2,6 +2,9 @@
 /**
  * @fileOverview Identifies the type of waste from an image.
  *
+ * THIS FILE IS DEPRECATED AND REPLACED BY A CLIENT-SIDE TENSORFLOW.JS MODEL.
+ * The logic is now in src/app/(app)/scan-waste/page.tsx.
+ *
  * - identifyWaste - A function that handles the waste identification process.
  * - IdentifyWasteInput - The input type for the identifyWaste function.
  * - IdentifyWasteOutput - The return type for the identifyWaste function.
@@ -28,34 +31,6 @@ const IdentifyWasteOutputSchema = z.object({
 export type IdentifyWasteOutput = z.infer<typeof IdentifyWasteOutputSchema>;
 
 export async function identifyWaste(input: IdentifyWasteInput): Promise<IdentifyWasteOutput> {
-  return identifyWasteFlow(input);
+  // This flow is deprecated.
+  throw new Error("This AI flow is deprecated. Use the client-side TensorFlow.js model instead.");
 }
-
-const prompt = ai.definePrompt({
-  name: 'identifyWastePrompt',
-  input: {schema: IdentifyWasteInputSchema},
-  output: {schema: IdentifyWasteOutputSchema},
-  prompt: `You are an expert in waste management and recycling. Your task is to identify the type of waste in the provided image.
-
-Analyze the image and determine if it contains a waste item.
-- If it is waste, classify it into one of the following categories: 'Organic', 'Recyclable', 'Hazardous', 'E-waste', or 'Other'.
-- Provide clear and concise disposal instructions.
-- If the item is recyclable, provide relevant recycling information, such as what materials it's made from and how it should be prepared for recycling.
-
-Image: {{media url=photoDataUri}}
-
-Your response must be in the structured format defined by the output schema.
-`,
-});
-
-const identifyWasteFlow = ai.defineFlow(
-  {
-    name: 'identifyWasteFlow',
-    inputSchema: IdentifyWasteInputSchema,
-    outputSchema: IdentifyWasteOutputSchema,
-  },
-  async input => {
-    const {output} = await prompt(input);
-    return output!;
-  }
-);

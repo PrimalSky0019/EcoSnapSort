@@ -7,23 +7,61 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Camera, CheckCircle, HelpCircle, Info, Loader2, RefreshCw, Send, Trash2, XCircle } from 'lucide-react';
 import React, { useRef, useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
-import { identifyWaste, type IdentifyWasteOutput } from '@/ai/flows/identify-waste';
 import { db, storage, auth } from '@/lib/firebase';
 import { getDownloadURL, ref, uploadString } from 'firebase/storage';
-import { addDoc, collection } from 'firebase/firestore';
+import { addDoc, collection, doc, getDoc } from 'firebase/firestore';
 import { v4 as uuidv4 } from 'uuid';
 import { onAuthStateChanged } from 'firebase/auth';
+import * as tf from '@tensorflow/tfjs';
+
+// Define the output structure based on your needs.
+type WasteAnalysisResult = {
+  isWaste: boolean;
+  wasteType: 'Organic' | 'Recyclable' | 'Hazardous' | 'E-waste' | 'Other' | 'Not Waste';
+  disposalInstructions: string;
+  recyclingInfo?: string;
+};
+
+// This is a placeholder for your model's labels.
+// IMPORTANT: The order must match the output of your classification model.
+const WASTE_LABELS = ['Organic', 'Recyclable', 'Hazardous', 'E-waste', 'Other'];
 
 
 export default function ScanWastePage() {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const imageRef = useRef<HTMLImageElement>(null);
   const [hasCameraPermission, setHasCameraPermission] = useState(true);
   const [capturedImage, setCapturedImage] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const [result, setResult] = useState<IdentifyWasteOutput | null>(null);
+  const [result, setResult] = useState<WasteAnalysisResult | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
   const { toast } = useToast();
+  const [model, setModel] = useState<tf.LayersModel | null>(null);
+
+  // Load the TensorFlow.js model
+  useEffect(() => {
+    async function loadModel() {
+      try {
+        // IMPORTANT: Make sure your model files are in the /public/model/ directory.
+        const loadedModel = await tf.loadLayersModel('/model/model.json');
+        setModel(loadedModel);
+        toast({
+          title: 'Model Loaded',
+          description: 'The waste identification model is ready.',
+        });
+      } catch (error) {
+        console.error("Error loading model: ", error);
+        toast({
+          variant: 'destructive',
+          title: 'Model Load Failed',
+          description: 'Could not load the waste identification model. Please try refreshing the page.',
+        });
+      }
+    }
+    loadModel();
+  }, [toast]);
+
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
@@ -91,28 +129,78 @@ export default function ScanWastePage() {
     setCapturedImage(null);
     setResult(null);
   };
+  
+  async function getDisposalInstructions(wasteType: string): Promise<{ instruction: string; recyclingInfo?: string }> {
+      if (!wasteType || wasteType === 'Not Waste') {
+          return { instruction: "This item does not appear to be waste." };
+      }
+      try {
+          const docRef = doc(db, "disposal-instructions", wasteType.toLowerCase());
+          const docSnap = await getDoc(docRef);
+
+          if (docSnap.exists()) {
+              const data = docSnap.data();
+              return {
+                  instruction: data.instruction || `No specific instruction for ${wasteType}.`,
+                  recyclingInfo: data.recyclingInfo,
+              };
+          } else {
+              return { instruction: `No disposal instructions found for ${wasteType}.` };
+          }
+      } catch (error) {
+          console.error("Error fetching instructions: ", error);
+          return { instruction: "Could not retrieve disposal instructions at this time." };
+      }
+  }
+
 
   const analyzeImage = async () => {
-    if (!capturedImage) return;
+    if (!capturedImage || !imageRef.current || !model) {
+        toast({
+            variant: 'destructive',
+            title: 'Analysis Failed',
+            description: !model ? 'The AI model is not loaded yet.' : 'No image to analyze.',
+        });
+        return;
+    };
     setLoading(true);
     setResult(null);
+    
     try {
-      // 1. Analyze the image with the AI flow
-      const analysisResult = await identifyWaste({ photoDataUri: capturedImage });
-      setResult(analysisResult);
+        // 1. Classify image with TensorFlow.js
+        const imageElement = imageRef.current;
+        const tensor = tf.browser.fromPixels(imageElement).resizeNearestNeighbor([224, 224]).toFloat().expandDims();
+        const predictions = model.predict(tensor) as tf.Tensor;
+        const predictionData = await predictions.data();
+        const highestPredictionIndex = predictions.argMax(-1).dataSync()[0];
+        const wasteType = WASTE_LABELS[highestPredictionIndex] as WasteAnalysisResult['wasteType'];
+        
+        tensor.dispose();
+        predictions.dispose();
 
-      // 2. Upload the image to Firebase Storage
+        // 2. Fetch disposal instructions from Firestore
+        const { instruction, recyclingInfo } = await getDisposalInstructions(wasteType);
+
+        const analysisResult: WasteAnalysisResult = {
+            isWaste: wasteType !== 'Not Waste',
+            wasteType: wasteType,
+            disposalInstructions: instruction,
+            recyclingInfo: recyclingInfo,
+        };
+        setResult(analysisResult);
+
+      // 3. Upload the image to Firebase Storage
       const imageId = uuidv4();
       const storageRef = ref(storage, `waste-images/${imageId}.jpg`);
       await uploadString(storageRef, capturedImage, 'data_url');
       const downloadURL = await getDownloadURL(storageRef);
 
-      // 3. Store the analysis and metadata in Firestore
+      // 4. Store the analysis and metadata in Firestore
       await addDoc(collection(db, "waste-analysis"), {
         ...analysisResult,
         imageUrl: downloadURL,
         createdAt: new Date(),
-        userId: userId, // Store the user's ID
+        userId: userId,
       });
 
       toast({
@@ -167,8 +255,7 @@ export default function ScanWastePage() {
             )}
 
             {capturedImage ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={capturedImage} alt="Captured waste" className="h-full w-full object-contain" />
+                <img ref={imageRef} src={capturedImage} alt="Captured waste" className="h-full w-full object-contain" />
             ) : (
                 <video ref={videoRef} className="h-full w-full object-cover" autoPlay playsInline muted />
             )}
@@ -190,7 +277,7 @@ export default function ScanWastePage() {
                     <Button variant="outline" onClick={retakeImage} disabled={loading}>
                         <RefreshCw className='mr-2' /> Retake
                     </Button>
-                    <Button onClick={analyzeImage} disabled={loading || !userId}>
+                    <Button onClick={analyzeImage} disabled={loading || !userId || !model}>
                         {loading ? (
                             <><Loader2 className='mr-2 animate-spin' /> Analyzing...</>
                         ) : (
@@ -214,7 +301,7 @@ export default function ScanWastePage() {
                         Analysis Result: {result.isWaste ? result.wasteType : "Not Waste"}
                     </CardTitle>
                     <CardDescription>
-                        Here is the AI's analysis of your item. For locating nearby facilities, please check the "Locate Facilities" page.
+                        Here is the analysis of your item. For locating nearby facilities, please check the "Locate Facilities" page.
                     </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
