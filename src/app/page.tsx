@@ -110,7 +110,7 @@ export default function HomePage() {
                     <CardContent className="flex-1" />
                     <div className='p-6 pt-0'>
                         <Button className="w-full" asChild>
-                            <Link href={feature.href}>
+                            <Link href="/signup">
                             {feature.cta} <ArrowRight className="ml-2" />
                             </Link>
                         </Button>
