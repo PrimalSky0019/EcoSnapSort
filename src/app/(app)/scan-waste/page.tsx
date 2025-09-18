@@ -270,12 +270,10 @@ export default function ScanWastePage() {
                             <p className="text-muted-foreground">{result.recyclingInfo}</p>
                         </div>
                     )}
-                    {relevantCenters.length > 0 && (
-                        <div className="space-y-4">
-                            <h3 className="font-semibold">Nearby Disposal Centers</h3>
-                            <WasteMap centers={relevantCenters} />
-                        </div>
-                    )}
+                    <div className={relevantCenters.length > 0 ? 'space-y-4' : 'hidden'}>
+                        <h3 className="font-semibold">Nearby Disposal Centers</h3>
+                        <WasteMap centers={relevantCenters} />
+                    </div>
                 </CardContent>
             </Card>
         )}

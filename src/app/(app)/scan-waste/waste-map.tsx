@@ -1,5 +1,6 @@
 "use client";
 import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
+import React from 'react';
 
 type WasteMapProps = {
   centers: {
@@ -9,7 +10,7 @@ type WasteMapProps = {
   }[];
 }
 
-export default function WasteMap({ centers }: WasteMapProps) {
+function WasteMap({ centers }: WasteMapProps) {
   // Default center if no centers are provided, or use the first center's location
   const mapCenter: [number, number] = centers.length > 0 ? [centers[0].lat, centers[0].lng] : [28.61, 77.23];
 
@@ -27,3 +28,5 @@ export default function WasteMap({ centers }: WasteMapProps) {
     </MapContainer>
   );
 }
+
+export default React.memo(WasteMap);
