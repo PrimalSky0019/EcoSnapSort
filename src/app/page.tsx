@@ -5,9 +5,16 @@ import { PageHeader } from '@/components/page-header';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import Image from 'next/image';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
-import ScanWastePage from './(app)/scan-waste/page';
 
 const features = [
+  {
+    title: 'Scan Waste',
+    description: 'Use your camera to identify waste types and get disposal instructions instantly.',
+    icon: Camera,
+    href: '/scan-waste',
+    cta: 'Scan Your Waste',
+    imageId: 'scan-waste-feature'
+  },
   {
     title: 'Report Issues',
     description: 'See a waste problem? Snap a photo and report it to the authorities in seconds.',
@@ -78,10 +85,6 @@ export default function HomePage() {
           </div>
         </section>
 
-        <section id="scan-waste" className="py-16 md:py-24">
-            <ScanWastePage />
-        </section>
-
         <section className="py-16 md:py-24 bg-background">
           <div className="container mx-auto px-4 sm:px-6 lg:px-8">
             <PageHeader
@@ -89,7 +92,7 @@ export default function HomePage() {
                 description="Eco Snap Sort empowers every citizen to take an active role in waste management. Here's how:"
                 className='text-center mb-12'
             />
-            <div className="grid md:grid-cols-1 lg:grid-cols-3 gap-8">
+            <div className="grid md:grid-cols-2 lg:grid-cols-2 gap-8">
               {features.map((feature) => {
                 const featureImage = PlaceHolderImages.find((img) => img.id === feature.imageId);
                 return (

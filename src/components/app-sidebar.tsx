@@ -24,7 +24,6 @@ import {
   Settings,
   User,
   Camera,
-  Home,
 } from 'lucide-react';
 import { Logo } from '@/components/icons';
 import { usePathname } from 'next/navigation';
@@ -33,17 +32,12 @@ import Link from 'next/link';
 
 const links = [
   {
-    href: '/',
-    label: 'Home',
-    icon: Home,
-  },
-  {
     href: '/dashboard',
     label: 'Dashboard',
     icon: LayoutGrid,
   },
   {
-    href: '/#scan-waste',
+    href: '/scan-waste',
     label: 'Scan Waste',
     icon: Camera,
   },
